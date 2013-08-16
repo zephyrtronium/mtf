@@ -1,4 +1,4 @@
-// AAABBBAAA -> 000100100
+// AAABBBAAA -> AAABAABAA
 package mtf
 
 var _alphabet = []byte{
@@ -20,17 +20,14 @@ var _alphabet = []byte{
 	244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 }
 
-// Perform move-to-front on s in-place using an initial alphabet of {0...255}.
-func MTF(s []byte) {
-	a := make([]byte, 256)
-	copy(a, _alphabet)
-	MTFa(s, a)
-}
-
-// Perform move-to-front on s in-place using a supplied initial alphabet. The
-// alphabet must contain at least an entry for each character in s. No copy of
-// the alphabet is made; it is modified in-place.
-func MTFa(s, alphabet []byte) {
+// Perform move-to-front on s in-place using a supplied initial alphabet. If
+// the alphabet is nil, the default alphabet is used. The alphabet must
+// contain at least an entry for each character in s. No copy of the alphabet
+// is made; it is modified in-place.
+func MTF(s, alphabet []byte) {
+	if alphabet == nil {
+		alphabet = DefaultAlphabet()
+	}
 	for i, c := range s {
 		// find the alphabet index of c
 		for j, d := range alphabet {
@@ -46,22 +43,26 @@ func MTFa(s, alphabet []byte) {
 	}
 }
 
-// Undo move-to-front on s in-place using an initial alphabet of {0...255}.
-func UnMTF(s []byte) {
-	a := make([]byte, 256)
-	copy(a, _alphabet)
-	UnMTFa(s, a)
-}
-
-// Undo move-to-front on s in-place using a supplied initial alphabet. No copy
-// of the alphabet is made; it is modified in-place.
-func UnMTFa(s, alphabet []byte) {
+// Undo move-to-front on s in-place using a supplied initial alphabet. If the
+// alphabet is nil, the default alphabet is used. No copy of the alphabet is
+// made; it is modified in-place.
+func UnMTF(s, alphabet []byte) {
+	if alphabet == nil {
+		alphabet = DefaultAlphabet()
+	}
 	for i, c := range s {
 		d := alphabet[c]
 		s[i] = d
 		copy(alphabet[1:], alphabet[:c])
 		alphabet[0] = d
 	}
+}
+
+// Generate the default initial alphabet: A[i] = i.
+func DefaultAlphabet() []byte {
+	a := make([]byte, 256)
+	copy(a, _alphabet)
+	return a
 }
 
 // Create an alphabet of minimal size for s. It is ordered by the order of
@@ -71,7 +72,9 @@ func MinAlphabet(s []byte) (alphabet []byte) {
 	set := [256]bool{}
 	for _, c := range s {
 		if !set[c] {
-			alphabet = append(alphabet, c)
+			if len(append(alphabet, c)) == 256 {
+				return alphabet
+			}
 			set[c] = true
 		}
 	}
